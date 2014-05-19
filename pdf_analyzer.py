@@ -69,29 +69,27 @@ def get_acceptance_error(raw_set, sel_set):
     wminus = []
 
     for ii in range(raw_set.npairs):
-        wa =  ((sel_set.get_sum_veca(ii) / raw_set.get_sum_veca(ii)) / central_acc)  - 1
+        wa =  ((sel_set.get_sum_veca(ii) / raw_set.get_sum_veca(ii)) / central_acc) - 1
         wb =  ((sel_set.get_sum_vecb(ii) / raw_set.get_sum_vecb(ii)) / central_acc) - 1 
 
         if raw_set.name == "NNPDF": #NNPDF IS HANDLED DIFFERENTLY
+            
             if wa > 0: wplus.append(wa*wa)
             else: wminus.append(wa*wa)
 
             if wb > 0: wplus.append(wb*wb)
             else: wminus.append(wb*wb)
+            
         else: ## ALL OTHER PDF SETS
-            if wa > wb:
-                if wa > 0: wplus.append(wa*wa)
-                if wb < 0: wminus.append(wb*wb)
-            elif wb >= wa:
-                if wb > 0: wplus.append(wb*wb)
-                if wa < 0: wminus.append(wa*wa)
+            wplus.append(math.pow( max([wa, wb, 0]), 2)) 
+            wminus.append(math.pow( min([wa, wb, 0]), 2))
                                     
     pos_error = math.sqrt(sum(wplus))
     neg_error = math.sqrt(sum(wminus))
 
-    if raw_set.name == "NNPDF":
-        pos_error /= math.sqrt(len(wplus))
-        neg_error /= math.sqrt(len(wminus))
+    if raw_set.name == "NNPDF": #NNPDF IS HANDLED DIFFERENTLY
+        pos_error /= float(math.sqrt(len(wplus)))
+        neg_error /= float(math.sqrt(len(wminus)))
 
     return (central_acc, pos_error, neg_error)
     
@@ -103,7 +101,6 @@ raw_mstw = pdf_set("MSTW",41)
 sel_nnpdf = pdf_set("NNPDF",101)
 sel_cteq = pdf_set("CTEQ",45)
 sel_mstw = pdf_set("MSTW",41)
-
 
 #fill the arrays for the raw vecbos files
 raw_file = rt.TFile(options.raw,"READ")
@@ -137,7 +134,7 @@ for event in xrange(sel_tree.GetEntries()):
         sel_cteq.add_event_pdfs(sel_tree.wCTEQ66)
         sel_nnpdf.add_event_pdfs(sel_tree.wNNPDF20100)
 
-
+#calculate the acceptance error
 (nnpdf_cen, nnpdf_pos, nnpdf_neg) = get_acceptance_error(raw_nnpdf, sel_nnpdf)
 (cteq_cen, cteq_pos, cteq_neg) = get_acceptance_error(raw_cteq, sel_cteq)
 (mstw_cen, mstw_pos, mstw_neg) = get_acceptance_error(raw_mstw, sel_mstw)
